@@ -1,0 +1,3 @@
+"""
+CleanMySamsung Test Suite
+"""
