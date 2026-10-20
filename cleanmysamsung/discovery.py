@@ -18,11 +18,6 @@ OUI_TABLE = {
         "28:ba:b5", "30:cd:a7", "34:23:ba", "48:44:f7", "50:01:d9", "5c:a6:e6",
         "78:47:1d", "84:25:db", "94:35:0a", "98:0d:2e", "a8:06:00", "bc:72:b9",
         "c4:73:1e", "dc:71:44", "e4:7c:f9", "f4:09:d8"
-    ],
-    "TCL": [
-        "00:1a:9a", "20:f4:78", "30:96:fb", "40:8e:2c", "50:2b:73", "6c:5c:14",
-        "7c:c5:37", "84:20:96", "a4:31:35", "b0:19:c6", "c8:02:10", "d0:57:4c",
-        "dc:53:7c", "e0:b6:55", "fc:4a:e9"
     ]
 }
 
@@ -56,8 +51,8 @@ def identify_vendor(mac):
     mac_lower = mac.lower()
     for vendor, prefixes in OUI_TABLE.items():
         if any(mac_lower.startswith(p) for p in prefixes):
-            return f"⭐ {vendor}"
-    return "Network Device"
+            return "⭐ Samsung Galaxy Device"
+    return "Other Network Device"
 
 async def ping_ip(ip):
     proc = await asyncio.create_subprocess_exec(
@@ -93,7 +88,7 @@ def run_network_discovery():
     """Run full interactive discovery of local Android devices."""
     local_ip, subnet = get_local_ip_and_subnet()
     print("=" * 72)
-    print(" 📡 WIRELESS ANDROID DEVICE DISCOVERY")
+    print(" 📡 WIRELESS SAMSUNG GALAXY DEVICE DISCOVERY")
     print("=" * 72)
     print(f"Scanning Subnet: {subnet}.1 - {subnet}.254...")
 

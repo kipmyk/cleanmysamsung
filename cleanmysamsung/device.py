@@ -73,12 +73,16 @@ def probe_device(device):
 
 def check_profile_compatibility(device_info, profile_data):
     """
-    Validate device model and Android version against profile constraints.
+    Validate device manufacturer, model, and Android version against profile constraints.
     Returns (is_compatible: bool, warning_msg: str)
     """
+    mfg = (device_info.get("manufacturer") or "").lower()
+    if mfg and "samsung" not in mfg:
+        return False, f"Device manufacturer '{device_info.get('manufacturer')}' is not supported. CleanMySamsung is strictly designed for Samsung Galaxy devices."
+
     target_models = profile_data.get("target_models", [])
-    if target_models and device_info["model"] not in target_models:
-        return False, f"Device model '{device_info['model']}' is not in profile target models: {target_models}"
+    if target_models and device_info.get("model") not in target_models:
+        return False, f"Device model '{device_info.get('model')}' is not in profile target models: {target_models}"
 
     android_ver = device_info.get("android_version")
     if android_ver and android_ver.isdigit():
