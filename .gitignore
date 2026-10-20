@@ -14,4 +14,6 @@ backup/*.json
 !backup/.gitkeep
 
 # macOS
-.DS_Store
+# Explicitly track tests
+!tests/
+!tests/**
