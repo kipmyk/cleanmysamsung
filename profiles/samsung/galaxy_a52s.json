@@ -1,0 +1,69 @@
+{
+  "profile_name": "Samsung Galaxy A52s / A52 5G",
+  "target_models": ["SM-A528B", "SM-A525F", "SM-A526B", "SM-A526U"],
+  "min_android_version": 11,
+  "max_android_version": 14,
+  "description": "Safe, non-destructive debloat profile tested on Samsung One UI 5 / 6. Preserves Knox, camera, fingerprint, and banking applications.",
+  "tiers": {
+    "facebook_preloads": [
+      {
+        "package": "com.facebook.appmanager",
+        "description": "Facebook App Manager daemon running in the background"
+      },
+      {
+        "package": "com.facebook.system",
+        "description": "Facebook system background service"
+      },
+      {
+        "package": "com.facebook.services",
+        "description": "Facebook analytics telemetry collector"
+      }
+    ],
+    "telemetry_and_promotions": [
+      {
+        "package": "com.sec.android.diagmonagent",
+        "description": "Samsung Diagnostic Monitor Agent (Sends diagnostic logs to Samsung servers)"
+      },
+      {
+        "package": "com.samsung.android.rubin.app",
+        "description": "Samsung Customization Service (Collects app usage and location behavioral habits)"
+      },
+      {
+        "package": "com.samsung.android.game.gametools",
+        "description": "Game Booster overlay and performance throttling service"
+      }
+    ],
+    "bixby_ecosystem": [
+      {
+        "package": "com.samsung.android.bixby.agent",
+        "description": "Bixby voice assistant core engine"
+      },
+      {
+        "package": "com.samsung.android.bixby.wakeup",
+        "description": "Bixby microphone listener for voice wakeup"
+      },
+      {
+        "package": "com.samsung.android.bixbyvision.framework",
+        "description": "Bixby camera vision OCR and shopping card suggestions"
+      },
+      {
+        "package": "com.samsung.android.bixby.service",
+        "description": "Bixby background orchestration daemon"
+      },
+      {
+        "package": "com.samsung.android.app.settings.bixby",
+        "description": "Bixby settings integration"
+      }
+    ],
+    "partner_preloads": [
+      {
+        "package": "com.linkedin.android",
+        "description": "Preloaded LinkedIn mobile application"
+      },
+      {
+        "package": "com.microsoft.appmanager",
+        "description": "Link to Windows companion preload"
+      }
+    ]
+  }
+}
