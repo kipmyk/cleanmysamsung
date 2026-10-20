@@ -6,7 +6,7 @@ CleanMySamsung is an open-source utility for managing pre-installed packages and
 
 ## Capabilities
 
-- Overclock UI animation scales (window, transition, and animator) from default 1.0x to 0.5x for reduced transition delays.
+- Adjust UI animation duration scales (window, transition, and animator) from default 1.0x to 0.5x to reduce visual transition delays.
 - Disable selected background telemetry, diagnostic loggers, and preloaded partner packages using `pm disable-user --user 0`.
 - Record pre-flight package states into structured JSON session records prior to modification.
 - Perform isolated delta rollbacks that restore only packages altered in a given session, preserving preexisting user settings.
@@ -179,9 +179,9 @@ The included profile (`profiles/samsung/galaxy_a52s.json`) targets the following
 
 1. **State Preservation**: The utility uses `pm disable-user --user 0`. Packages remain in read-only system storage and can be re-enabled at any time. No system partition files are removed.
 2. **Pre-flight State Recording**: Prior to executing modifications, existing states (`ENABLED`, `DISABLED`, or `NOT_INSTALLED`) are queried and recorded into `backup/session_<timestamp>.json`.
-3. **Targeted Rollback**: Restoration exclusively re-enables packages that were verified as disabled during that specific session. Packages that were already disabled prior to running the tool remain disabled.
+3. **Targeted Rollback with State Verification**: Restoration exclusively re-enables packages confirmed to have been disabled during that specific session. Packages that were already disabled prior to running the tool remain disabled. Rather than relying on return codes alone, the tool queries the package manager afterward to verify whether each package has successfully returned to the enabled state.
 4. **Subprocess Safety**: ADB commands are executed using argument lists rather than shell strings, avoiding shell injection risks.
-5. **Device Identity Validation**: Restoring a session verifies that the connected device matches the model recorded in the session snapshot.
+5. **Multi-Field Device Validation**: Restoring a session checks both device model and hardware serial against the session record. If a mismatch is detected, the tool warns the operator and requires explicit confirmation before proceeding.
 
 ---
 
@@ -196,11 +196,10 @@ python3 -m unittest discover tests
 
 ## Author and Support
 
-CleanMySamsung is developed and maintained by Mike Kipruto.
+CleanMySamsung is developed and maintained by [Mike Kipruto](https://mike.co.ke).
 
-- Website and Contact: https://mike.co.ke/contact
-- Issues and Bug Reports: If you encounter a problem or have a feature request, please open an issue on the GitHub repository.
-- Contributing: Pull requests are welcome. Please ensure any changes include appropriate unit tests.
+- Issues and Bug Reports: If you encounter a problem or have a feature request, please [open an issue](https://github.com/kipmyk/cleanmysamsung/issues/new).
+- Contributing: Pull requests are welcome. Please [submit a pull request](https://github.com/kipmyk/cleanmysamsung/compare) and ensure any changes include appropriate unit tests.
 
 ---
 
