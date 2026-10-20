@@ -1,6 +1,6 @@
 """
 Device Profile & Compatibility Detection Module
-Author: Mike Kipruto (https://mike.co.ke/contact)
+Author: Mike Kipruto (https://mike.co.ke)
 
 Gathers hardware specifications, Android release, One UI version,
 and performs strict compatibility checks against debloat profiles.

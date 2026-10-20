@@ -1,6 +1,6 @@
 """
 Package Management & Verification Module
-Author: Mike Kipruto (https://mike.co.ke/contact)
+Author: Mike Kipruto (https://mike.co.ke)
 
 Validates package syntax, parses profiles, queries package state maps,
 and performs post-operation verification on every disable and restore operation.

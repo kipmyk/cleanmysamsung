@@ -1,6 +1,6 @@
 """
 Session State Tracking & Delta Rollback Module
-Author: Mike Kipruto (https://mike.co.ke/contact)
+Author: Mike Kipruto (https://mike.co.ke)
 
 Maintains atomic JSON session history, records pre-flight states,
 and ensures safe, isolated rollbacks without touching unrelated packages.

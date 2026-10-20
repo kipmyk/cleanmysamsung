@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 CleanMySamsung: Samsung Galaxy Package Management & Animation Utility
-Author: Mike Kipruto (https://mike.co.ke/contact)
+Author: Mike Kipruto (https://mike.co.ke)
 
 Non-root utility for managing pre-installed packages and UI animations
 on Samsung Galaxy devices running One UI.

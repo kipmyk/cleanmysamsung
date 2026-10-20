@@ -1,6 +1,6 @@
 """
 ADB Execution & Device Resolution Module
-Author: Mike Kipruto (https://mike.co.ke/contact)
+Author: Mike Kipruto (https://mike.co.ke)
 
 Handles binary resolution, command execution with strict error checking,
 timeouts, and explicit device selection with serial deduplication.

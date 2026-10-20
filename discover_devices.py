@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Local Network Samsung Galaxy Discovery Scanner
-Author: Mike Kipruto (https://mike.co.ke/contact)
+Author: Mike Kipruto (https://mike.co.ke)
 
 Discovers active subnet hosts, resolves Samsung hardware OUI MAC prefixes,
 and checks for open ADB debug ports.

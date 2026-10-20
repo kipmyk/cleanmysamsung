@@ -1,6 +1,6 @@
 """
 Animation Settings Management Module
-Author: Mike Kipruto (https://mike.co.ke/contact)
+Author: Mike Kipruto (https://mike.co.ke)
 
 Provides independent animation settings tracking, verification, and non-destructive rollbacks.
 """

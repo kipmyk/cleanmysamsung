@@ -1,6 +1,6 @@
 """
 Wireless Discovery & Network Inspection Module
-Author: Mike Kipruto (https://mike.co.ke/contact)
+Author: Mike Kipruto (https://mike.co.ke)
 
 Passively discovers devices on the local subnet via ping and ARP table lookup,
 and checks for accessible ADB debug ports. Does not execute unauthorized connections.
