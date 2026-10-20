@@ -162,6 +162,16 @@ python3 -m unittest discover tests
 
 ---
 
+## Author and Support
+
+CleanMySamsung is developed and maintained by Mike Kipruto.
+
+- Website and Contact: https://mike.co.ke/contact
+- Issues and Bug Reports: If you encounter a problem or have a feature request, please open an issue on the GitHub repository.
+- Contributing: Pull requests are welcome. Please ensure any changes include appropriate unit tests.
+
+---
+
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
