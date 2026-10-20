@@ -57,6 +57,32 @@ Installation commands by operating system:
 
 ---
 
+## Installation
+
+You can get CleanMySamsung either by cloning the repository with Git or by downloading the source archive:
+
+### Method 1: Clone with Git (Recommended)
+
+```bash
+git clone https://github.com/kipmyk/cleanmysamsung.git
+cd cleanmysamsung
+```
+
+### Method 2: Download ZIP Archive
+
+1. Navigate to the repository page at [https://github.com/kipmyk/cleanmysamsung](https://github.com/kipmyk/cleanmysamsung).
+2. Click the green **Code** button and select **Download ZIP**.
+3. Extract the downloaded ZIP file and open your terminal in the extracted folder:
+   ```bash
+   cd cleanmysamsung-main
+   ```
+
+### Zero Dependencies Required
+
+CleanMySamsung runs entirely on Python's built-in standard library. No compilation, external packages, or `pip install` commands are needed. As long as Python 3.8+ and `adb` are available on your machine, you can run the commands directly.
+
+---
+
 ## Setup Instructions
 
 ### Option A: Wireless Debugging
