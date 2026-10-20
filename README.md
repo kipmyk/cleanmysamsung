@@ -49,11 +49,27 @@ python3 cleanmysamsung.py --speedup
 ```bash
 python3 cleanmysamsung.py --debloat lists/samsung_galaxy_a52.txt
 ```
+*Creates an atomic, timestamped session snapshot in `backup/session_YYYYMMDD_HHMMSS.json` before touching any system package.*
 
-#### Restore back to factory defaults anytime:
+#### Restore only what was changed by this tool:
 ```bash
-python3 cleanmysamsung.py --restore lists/samsung_galaxy_a52.txt
+# Roll back the most recent debloat session:
+python3 cleanmysamsung.py --restore latest
+
+# Or restore an explicit session snapshot:
+python3 cleanmysamsung.py --restore backup/session_20261020_040622.json
 ```
+*Unlike naive scripts that blindly enable everything, CleanMySamsung inspects pre-run states and restores ONLY packages modified during that session, preserving any apps you had disabled previously.*
+
+---
+
+## 🏗️ Safety & Architecture Guarantees
+
+1. **Atomic Session Tracking:** Every run generates a structured JSON record containing device fingerprint, original package states, and original animation scales.
+2. **Pre-Flight Validation:** Validates package syntax, filters out packages that are not installed, and skips packages that are already frozen.
+3. **Safe Device Verification:** Verifies device model before restoring to prevent applying a backup from one phone model to another.
+4. **Zero Shell Injection:** Uses parameter arrays rather than string interpolation for remote ADB commands.
+5. **No Blind Re-enable:** Rollback strictly targets `changes_applied`, ensuring preexisting user configurations remain untouched.
 
 ---
 
