@@ -8,9 +8,34 @@ Inspired by cleanyourtv and modern Android optimization practices.
 import argparse
 import os
 import subprocess
-import sys
+import shutil
 
-ADB_BIN = "/opt/homebrew/bin/adb" if os.path.exists("/opt/homebrew/bin/adb") else "adb"
+def find_adb():
+    """
+    Dynamically locate the adb executable across macOS (Apple Silicon & Intel),
+    Linux, Windows, and custom Android SDK environments.
+    """
+    # 1. Check system PATH first (standard cross-platform lookup)
+    path = shutil.which("adb")
+    if path:
+        return path
+
+    # 2. Check platform-specific standard installation directories
+    candidate_paths = [
+        "/opt/homebrew/bin/adb",                                       # macOS Homebrew (Apple Silicon)
+        "/usr/local/bin/adb",                                         # macOS Homebrew (Intel)
+        "/usr/bin/adb",                                               # Linux (apt / dnf / pacman)
+        os.path.expanduser("~/Library/Android/sdk/platform-tools/adb"), # macOS Android Studio
+        os.path.expanduser("~/Android/Sdk/platform-tools/adb"),         # Linux Android Studio
+        os.path.expandvars(r"%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe"), # Windows Android Studio
+    ]
+    for candidate in candidate_paths:
+        if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+            return candidate
+
+    return "adb"  # Default fallback to PATH invocation
+
+ADB_BIN = find_adb()
 
 def run_adb(cmd_args, device=None, capture=True):
     """Run an ADB command and return stdout/stderr."""
