@@ -25,6 +25,38 @@ Theoretically compatible devices:
 
 ---
 
+## Requirements and Prerequisites
+
+### 1. Python Environment
+CleanMySamsung requires **Python 3.8 or later**. It is built entirely on the Python standard library, meaning zero third-party `pip` packages or external runtime libraries are required:
+- `argparse` (CLI parsing)
+- `asyncio` and `socket` (Subnet discovery and port probing)
+- `json` (Session snapshots and profile schemas)
+- `subprocess` (Direct ADB binary execution with parameter lists)
+- `typing` (Type annotations)
+- `unittest` (Automated test suite)
+
+### 2. Android Debug Bridge (ADB)
+The Android SDK Platform Tools binary (`adb`) must be accessible on your system. CleanMySamsung automatically detects `adb` in standard system paths across macOS, Linux, and Windows.
+
+Installation commands by operating system:
+- **macOS** (Homebrew):
+  ```bash
+  brew install android-platform-tools
+  ```
+- **Ubuntu / Debian**:
+  ```bash
+  sudo apt install adb
+  ```
+- **Fedora / RHEL**:
+  ```bash
+  sudo dnf install android-tools
+  ```
+- **Windows**:
+  Download [Android SDK Platform-Tools](https://developer.android.com/tools/releases/platform-tools) and add the directory to your system `PATH`.
+
+---
+
 ## Setup Instructions
 
 ### Option A: Wireless Debugging
