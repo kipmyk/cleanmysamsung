@@ -1,5 +1,7 @@
 """
 Session State Tracking & Delta Rollback Module
+Author: Mike Kipruto (https://mike.co.ke/contact)
+
 Maintains atomic JSON session history, records pre-flight states,
 and ensures safe, isolated rollbacks without touching unrelated packages.
 """
@@ -7,18 +9,65 @@ and ensures safe, isolated rollbacks without touching unrelated packages.
 import datetime
 import json
 import os
+import re
 import sys
-from .animations import get_animation_scales, restore_animations
-from .packages import enable_package_verified
+from typing import Any, Dict, List, Optional, Tuple
 
-def create_session_record(device_info, profile_name, targets, current_states):
+from .animations import get_animation_scales, restore_animations
+from .packages import enable_package_verified, validate_package_name
+
+SESSION_ID_REGEX = re.compile(r"^session_[a-zA-Z0-9_]+$")
+
+class SessionError(RuntimeError):
+    """Base exception for session operations."""
+    pass
+
+class SessionValidationError(SessionError):
+    """Raised when a session file has invalid syntax, structure, or unsafe content."""
+    pass
+
+def validate_session_data(data: Any) -> None:
+    """
+    Validate the structure and contents of loaded session JSON.
+    Rejects malformed data, unknown structures, or invalid package names.
+    """
+    if not isinstance(data, dict):
+        raise SessionValidationError("Session data must be a JSON object.")
+
+    session_id = data.get("session_id")
+    if not isinstance(session_id, str) or not SESSION_ID_REGEX.match(session_id):
+        raise SessionValidationError(f"Invalid or unsafe session_id format: '{session_id}'")
+
+    device = data.get("device")
+    if not isinstance(device, dict):
+        raise SessionValidationError("Session record missing valid 'device' block.")
+
+    packages = data.get("packages")
+    if not isinstance(packages, dict):
+        raise SessionValidationError("Session record missing valid 'packages' block.")
+
+    # Validate package lists
+    for key in ("confirmed_disabled", "attempted", "skipped_already_disabled"):
+        pkg_list = packages.get(key, [])
+        if not isinstance(pkg_list, list):
+            raise SessionValidationError(f"Field 'packages.{key}' must be a list.")
+        for pkg in pkg_list:
+            if not isinstance(pkg, str) or not validate_package_name(pkg):
+                raise SessionValidationError(f"Invalid package name in packages.{key}: '{pkg}'")
+
+def create_session_record(
+    device_info: Dict[str, Any],
+    profile_name: str,
+    targets: List[str],
+    current_states: Dict[str, str]
+) -> Dict[str, Any]:
     """
     Construct initial session record before any system modification.
     """
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     session_id = f"session_{timestamp}"
 
-    record = {
+    record: Dict[str, Any] = {
         "session_id": session_id,
         "timestamp": datetime.datetime.now().isoformat(),
         "device": {
@@ -31,7 +80,7 @@ def create_session_record(device_info, profile_name, targets, current_states):
         },
         "profile": profile_name,
         "settings": {
-            "original_animations": get_animation_scales(device_info["target"]),
+            "original_animations": get_animation_scales(device_info.get("target")),
             "applied_animations": None
         },
         "packages": {
@@ -54,28 +103,51 @@ def create_session_record(device_info, profile_name, targets, current_states):
 
     return record
 
-def save_session_record(record, backup_dir="backup"):
-    """Atomically write session JSON to disk."""
+def save_session_record(record: Dict[str, Any], backup_dir: str = "backup") -> str:
+    """
+    Atomically write session JSON to disk using temporary file replacement.
+    Prevents path traversal and incomplete writes.
+    """
+    session_id = record.get("session_id", "")
+    if not isinstance(session_id, str) or not SESSION_ID_REGEX.match(session_id):
+        raise SessionValidationError(f"Invalid session_id: '{session_id}'")
+
     os.makedirs(backup_dir, exist_ok=True)
-    filename = f"{record['session_id']}.json"
+    filename = f"{session_id}.json"
     filepath = os.path.join(backup_dir, filename)
-    with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(record, f, indent=2)
+    tmp_filepath = os.path.join(backup_dir, f"{filename}.tmp_{os.getpid()}")
+
+    try:
+        with open(tmp_filepath, "w", encoding="utf-8") as f:
+            json.dump(record, f, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_filepath, filepath)
+    finally:
+        if os.path.exists(tmp_filepath):
+            try:
+                os.remove(tmp_filepath)
+            except OSError:
+                pass
+
     return filepath
 
-def find_latest_session(backup_dir="backup"):
-    """Find the most recent session JSON file in backup_dir."""
+def find_latest_session(backup_dir: str = "backup") -> Optional[str]:
+    """Find the most recent valid session JSON file in backup_dir."""
     if not os.path.isdir(backup_dir):
         return None
     sessions = sorted([
         os.path.join(backup_dir, f)
         for f in os.listdir(backup_dir)
-        if f.startswith("session_") and f.endswith(".json")
+        if f.startswith("session_") and f.endswith(".json") and not f.endswith(".tmp")
     ])
     return sessions[-1] if sessions else None
 
-def load_session(session_path, backup_dir="backup"):
-    """Load session JSON by path or 'latest' keyword."""
+def load_session(session_path: str, backup_dir: str = "backup") -> Tuple[str, Dict[str, Any]]:
+    """
+    Load and validate session JSON by path or 'latest' keyword.
+    Ensures file exists, is valid JSON, and adheres to the session schema.
+    """
     if session_path.lower() == "latest":
         latest = find_latest_session(backup_dir)
         if not latest:
@@ -86,38 +158,67 @@ def load_session(session_path, backup_dir="backup"):
         raise FileNotFoundError(f"Session file not found: '{session_path}'")
 
     with open(session_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+        try:
+            data = json.load(f)
+        except json.JSONDecodeError as exc:
+            raise SessionValidationError(f"Malformed JSON in session file '{session_path}': {exc}") from exc
+
+    validate_session_data(data)
     return session_path, data
 
-def rollback_session(device, device_info, session_path, dry_run=False, backup_dir="backup"):
+def rollback_session(
+    device: str,
+    device_info: Dict[str, Any],
+    session_path: str,
+    dry_run: bool = False,
+    backup_dir: str = "backup"
+) -> bool:
     """
     Roll back only packages confirmed to have been modified in the specified session.
     Restores original animation scales independently.
+    Returns True if all attempted rollbacks succeeded, False otherwise.
     """
     resolved_path, session = load_session(session_path, backup_dir)
-    print(f"📖 Loaded session record: {resolved_path}")
+    print(f"Loaded session record: {resolved_path}")
 
-    # Compatibility check
-    sess_model = session.get("device", {}).get("model", "Unknown")
+    # Strong identity check: model, serial, and fingerprint
+    sess_device = session.get("device", {})
+    sess_model = sess_device.get("model", "Unknown")
     curr_model = device_info.get("model", "Unknown")
+    sess_serial = sess_device.get("serial", "Unknown")
+    curr_serial = device_info.get("serial", "Unknown")
+
+    identity_mismatch = False
+    warning_reasons: List[str] = []
+
     if sess_model != "Unknown" and curr_model != "Unknown" and sess_model != curr_model:
-        print(f"⚠️  WARNING: Session was created on '{sess_model}', but connected device is '{curr_model}'!")
-        confirm = input("Are you sure you want to proceed with restore? [y/N]: ").strip().lower()
+        identity_mismatch = True
+        warning_reasons.append(f"Model mismatch (session: '{sess_model}', current: '{curr_model}')")
+
+    if sess_serial != "Unknown" and curr_serial != "Unknown" and sess_serial != curr_serial:
+        identity_mismatch = True
+        warning_reasons.append(f"Serial mismatch (session: '{sess_serial}', current: '{curr_serial}')")
+
+    if identity_mismatch:
+        print("WARNING: Connected device does not match the session device:")
+        for r in warning_reasons:
+            print(f"  - {r}")
+        confirm = input("Do you wish to proceed with restoration anyway? [y/N]: ").strip().lower()
         if confirm != "y":
             print("Rollback aborted.")
             return False
 
-    confirmed_disabled = session.get("packages", {}).get("confirmed_disabled", [])
+    confirmed_disabled: List[str] = session.get("packages", {}).get("confirmed_disabled", [])
     print(f"\nTarget packages to re-enable: {len(confirmed_disabled)}")
     for pkg in confirmed_disabled:
-        print(f"  • {pkg}")
+        print(f"  - {pkg}")
 
     orig_anims = session.get("settings", {}).get("original_animations")
-    if orig_anims:
+    if orig_anims and isinstance(orig_anims, dict):
         print(f"\nOriginal animations to restore: {orig_anims}")
 
     if dry_run:
-        print("\n🔍 DRY-RUN MODE: No changes were applied to the device.")
+        print("\nDRY-RUN MODE: Preview completed. Zero changes were applied to the device.")
         return True
 
     restored_count = 0
@@ -126,22 +227,23 @@ def rollback_session(device, device_info, session_path, dry_run=False, backup_di
     for pkg in confirmed_disabled:
         success, err = enable_package_verified(device, pkg)
         if success:
-            print(f"  [RESTORED] ✅ {pkg}")
+            print(f"  [RESTORED] {pkg}")
             restored_count += 1
         else:
-            print(f"  [ERROR] ❌ {pkg}: {err}")
+            print(f"  [FAILED] {pkg}: {err}")
             failed_count += 1
 
-    # Restore animation scales independently
-    if orig_anims:
-        print("\n🔄 Restoring original animation scales...")
+    # Restore animation scales independently if valid
+    if orig_anims and isinstance(orig_anims, dict):
+        print("\nRestoring original animation scales...")
         success, err = restore_animations(device, orig_anims)
         if success:
-            print("✅ Restored original window, transition, and animator scales.")
+            print("Restored original window, transition, and animator scales.")
         else:
-            print(f"⚠️  Warning restoring animations: {err}")
+            print(f"Warning restoring animations: {err}")
 
     print("\n" + "=" * 70)
-    print(f"🎉 Rollback complete: {restored_count} packages restored, {failed_count} failed.")
+    print(f"Rollback complete: {restored_count} packages restored, {failed_count} failed.")
     print("=" * 70 + "\n")
+
     return failed_count == 0
