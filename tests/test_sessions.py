@@ -136,5 +136,25 @@ class TestSessionTracking(unittest.TestCase):
             ok = rollback_session("target_dev", self.device_info, saved_path, dry_run=False, backup_dir=temp_dir)
             self.assertFalse(ok)  # Returns False because one package failed
 
+    @patch("builtins.input", return_value="n")
+    def test_rollback_unverifiable_serial_warns_and_requires_confirmation(self, mock_input):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            record = create_session_record(
+                self.device_info,
+                "test_profile.json",
+                self.targets,
+                self.current_states
+            )
+            saved_path = save_session_record(record, backup_dir=temp_dir)
+
+            # Device where serial could not be queried
+            unverified_device = {
+                "model": "SM-A528B",
+                "serial": "Unknown"
+            }
+            # Aborts when user declines confirmation
+            result = rollback_session("target_dev", unverified_device, saved_path, dry_run=True, backup_dir=temp_dir)
+            self.assertFalse(result)
+
 if __name__ == "__main__":
     unittest.main()

@@ -181,26 +181,34 @@ def rollback_session(
     resolved_path, session = load_session(session_path, backup_dir)
     print(f"Loaded session record: {resolved_path}")
 
-    # Strong identity check: model, serial, and fingerprint
+    # Multi-field identity verification: model, serial, and fingerprint
     sess_device = session.get("device", {})
     sess_model = sess_device.get("model", "Unknown")
     curr_model = device_info.get("model", "Unknown")
     sess_serial = sess_device.get("serial", "Unknown")
     curr_serial = device_info.get("serial", "Unknown")
 
-    identity_mismatch = False
+    identity_warning = False
     warning_reasons: List[str] = []
 
-    if sess_model != "Unknown" and curr_model != "Unknown" and sess_model != curr_model:
-        identity_mismatch = True
-        warning_reasons.append(f"Model mismatch (session: '{sess_model}', current: '{curr_model}')")
+    if sess_model != "Unknown" and curr_model != "Unknown":
+        if sess_model != curr_model:
+            identity_warning = True
+            warning_reasons.append(f"Model mismatch (session: '{sess_model}', current: '{curr_model}')")
+    else:
+        identity_warning = True
+        warning_reasons.append(f"Model verification incomplete (session: '{sess_model}', current: '{curr_model}')")
 
-    if sess_serial != "Unknown" and curr_serial != "Unknown" and sess_serial != curr_serial:
-        identity_mismatch = True
-        warning_reasons.append(f"Serial mismatch (session: '{sess_serial}', current: '{curr_serial}')")
+    if sess_serial != "Unknown" and curr_serial != "Unknown":
+        if sess_serial != curr_serial:
+            identity_warning = True
+            warning_reasons.append(f"Serial mismatch (session: '{sess_serial}', current: '{curr_serial}')")
+    elif sess_serial != "Unknown" and curr_serial == "Unknown":
+        identity_warning = True
+        warning_reasons.append(f"Device serial could not be queried to verify session serial '{sess_serial}'")
 
-    if identity_mismatch:
-        print("WARNING: Connected device does not match the session device:")
+    if identity_warning:
+        print("WARNING: Device identity check flagged potential inconsistency:")
         for r in warning_reasons:
             print(f"  - {r}")
         confirm = input("Do you wish to proceed with restoration anyway? [y/N]: ").strip().lower()
