@@ -1,12 +1,15 @@
 """
 Device Profile & Compatibility Detection Module
+Author: Mike Kipruto (https://mike.co.ke/contact)
+
 Gathers hardware specifications, Android release, One UI version,
 and performs strict compatibility checks against debloat profiles.
 """
 
+from typing import Any, Dict, Optional, Tuple
 from .adb import run_adb
 
-def parse_battery_info(device):
+def parse_battery_info(device: Optional[str]) -> Dict[str, str]:
     """Retrieve dumpsys battery and safely parse fields in Python without shell pipes."""
     stdout, _, _ = run_adb(["shell", "dumpsys", "battery"], device, check=False)
     info = {"level": "Unknown", "voltage": "Unknown", "temperature": "Unknown"}
@@ -19,10 +22,10 @@ def parse_battery_info(device):
         elif line.startswith("temperature:"):
             temp_raw = line.split(":", 1)[1].strip()
             if temp_raw.isdigit():
-                info["temperature"] = f"{int(temp_raw)/10:.1f}°C"
+                info["temperature"] = f"{int(temp_raw)/10:.1f} C"
     return info
 
-def get_device_info(device):
+def get_device_info(device: Optional[str]) -> Dict[str, Any]:
     """
     Return comprehensive dictionary of device properties.
     """
@@ -34,7 +37,6 @@ def get_device_info(device):
     fingerprint, _, _ = run_adb(["shell", "getprop", "ro.build.fingerprint"], device, check=False)
     serial, _, _ = run_adb(["shell", "getprop", "ro.serialno"], device, check=False)
 
-    # Safe One UI version calculation
     if oneui_raw.isdigit():
         oneui_ver = f"{int(oneui_raw)/10000:.2f}"
     else:
@@ -43,8 +45,8 @@ def get_device_info(device):
     battery = parse_battery_info(device)
 
     return {
-        "target": device,
-        "serial": serial or device,
+        "target": device or "default",
+        "serial": serial or device or "Unknown",
         "manufacturer": mfg.capitalize() if mfg else "Samsung",
         "model": model or "Unknown",
         "android_version": release or "Unknown",
@@ -54,13 +56,13 @@ def get_device_info(device):
         "battery": battery
     }
 
-def probe_device(device):
+def probe_device(device: Optional[str]) -> Dict[str, Any]:
     """
-    Pretty-print device hardware, OS, and battery diagnostics.
+    Print device hardware, OS, and battery diagnostics.
     """
     info = get_device_info(device)
     print("=" * 70)
-    print(" 📱 SAMSUNG GALAXY DEVICE PROBE")
+    print(" SAMSUNG GALAXY DEVICE PROBE")
     print("=" * 70)
     print(f"Device Target   : {info['target']}")
     print(f"Manufacturer    : {info['manufacturer']}")
@@ -71,7 +73,10 @@ def probe_device(device):
     print("=" * 70 + "\n")
     return info
 
-def check_profile_compatibility(device_info, profile_data):
+def check_profile_compatibility(
+    device_info: Dict[str, Any],
+    profile_data: Dict[str, Any]
+) -> Tuple[bool, str]:
     """
     Validate device manufacturer, model, and Android version against profile constraints.
     Returns (is_compatible: bool, warning_msg: str)
